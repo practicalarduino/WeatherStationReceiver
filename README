@@ -1,8 +1,8 @@
 Weather Station Receiver
 ========================
 
-Copyright 2009 Marc Alexander
-Copyright 2009 Jonathan Oxer
+Copyright 2009 Marc Alexander <marc.alexander@gmail.com>
+Copyright 2009 Jonathan Oxer <jon@oxer.com.au>
 
 +---------------------------------------------------------------------+
 | This project is featured in the book "Practical Arduino" by         |
@@ -60,3 +60,7 @@ many weather station sensors are available individually you may find you
 can buy just the sensors you want and save some money compared to buying
 a complete system, while also gaining the flexibility of managing the
 data through an Arduino.
+
+NOTE: This code is still very preliminary and full of debug information
+used while interpreting the comms protocol. Please don't judge it by
+its current state!
