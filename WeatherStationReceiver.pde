@@ -329,20 +329,20 @@ void Packet_Converter_WS2355(void)
  */
 byte PacketAndChecksum_OK_WS2355(void)
 {
-  byte b;
-  byte c;
+  byte dataPos;
+  byte checksum;
 
   // First check, last 4 bits of packet are sum of the previous 48 bits (12 nibbles)
   // Don't forget to offset past the timestamp in the first 4 bytes
-  c = 0;
-  for( b = 4 ; b < 10 ; b++ )
+  checksum = 0;
+  for( dataPos = 4; dataPos < 10; dataPos++ )
   {
-    // Checked a byte at a time, accumulate into c
-    c += (bICP_WSR_PacketData[bICP_WSR_PacketOutputPointer][b] >> 4);
-    c += (bICP_WSR_PacketData[bICP_WSR_PacketOutputPointer][b] & 0x0F);
+    // Checked a byte at a time, accumulate into checksum
+    checksum += (bICP_WSR_PacketData[bICP_WSR_PacketOutputPointer][dataPos] >> 4);
+    checksum += (bICP_WSR_PacketData[bICP_WSR_PacketOutputPointer][dataPos] & 0x0F);
   }
-  c &= 0x0F;
-  if( c != (bICP_WSR_PacketData[bICP_WSR_PacketOutputPointer][10] >> 4) )
+  checksum &= 0x0F;
+  if( checksum != (bICP_WSR_PacketData[bICP_WSR_PacketOutputPointer][10] >> 4) )
   {
     return( false );   // Checksum does not match
   }
