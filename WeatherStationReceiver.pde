@@ -39,7 +39,6 @@
 /*--------------------------------------------------------------------------------------
   Includes
 --------------------------------------------------------------------------------------*/
-#include <avr/pgmspace.h>
 #include "WeatherStationReceiver.h"
 
 /*--------------------------------------------------------------------------------------
@@ -272,7 +271,7 @@ void Packet_Converter_WS2355(void)
                si +=        bICP_WSR_PacketData[bICP_WSR_PacketOutputPointer][8];
                uiWSR_RainfallCount = (uint)si;
 
-               //killer (for the Arduino) long multiply here, put in for now to demo real mm of rainfall maths
+               // Killer (for the Arduino) long multiply here, put in for now to demo real mm of rainfall maths
                ulWSR_Rainfall_mm_x10 = (((unsigned long)uiWSR_RainfallCount * 518) / 100);
 
                // Print to serial port 
