@@ -3,7 +3,7 @@
  *
  * Receives and decodes a pulse-width and transition encoded RF
  * bitstream, received through a 433MHz receiver module into the PB0
- * ICP Input Capture pin.
+ * Input Capture Pin (ICP).
  *
  * The transmitter is from the La Crosse WS-2355 Weather Station
  * package, the RF transmitter is the integrated thermo/hygro station,
@@ -15,7 +15,7 @@
  *
  * Copyright 2009 Marc Alexander <marc.alexander@gmail.com>
  * Copyright 2009 Jonathan Oxer <jon@oxer.com.au>
- * http://www.practicalarduino.com/projects/medium/weather-station-receiver
+ * http://www.practicalarduino.com/projects/weather-station-receiver
  */
 
 /**
@@ -83,24 +83,22 @@ const char strWindDirection[16][4] =
   "W  ", "WNW", "NW ", "NNW"
 };
 
+// Comment out for a normal build
+// Uncomment for a debug build
+//#define DEBUG
 
 /**
  * Initial configuration
  */
 void setup(void)
 {
-  Init_Ports();
-
-  //Note: This uses PORTB0 for the Input capture input, sets up and uses Timer/Counter1 registers, 
-  //      and also uses PORTD6 and PORTD7 for test LEDs in testing
-  Init_RF_Interpreters();
-
   Serial.begin( 38400 );   //using the serial port at 38400bps for debugging and logging
   Serial.println( "Weather Station Receiver has powered up" );
-
-  interrupts();   // Enable interrupts
+  
+  Init_Ports();
+  Init_RF_Interpreters();
+  interrupts();   // Enable interrupts (NOTE: is this necessary? Should be enabled by default)
 }
-
 
 /**
  * Main program loop
@@ -110,7 +108,6 @@ void loop(void)
   Packet_Converter_WS2355();
 }
 
-
 /**
  * Initialise port initial state and data direction registers
  */
@@ -118,7 +115,6 @@ void Init_Ports()
 {
    DDRB = 0x2F;   // B00101111
 }
-
 
 /*--------------------------------------------------------------------------------------
    Packet_Converter_WS2355
@@ -153,7 +149,7 @@ void Init_Ports()
              8 = S   9 = SSW  10 = SW   11 = WSW 
             12 = W  13 = WNW  14 = NW   15 = NNW
 
-   iiiiiiii = station ID byte. May not be using the top(lefT) bit of this byte, but is using bits 0-6 at least.
+   iiiiiiii = station ID byte. May not be using the top(left) bit of this byte, but is using bits 0-6 at least.
               Every time the WS-2300-25S transmitter batteries are changed, it generates a new semi-random
               station ID. The user is expected to power cycle the WS-2355 receiver which will then
               'lock on' to the next received station ID.
@@ -174,87 +170,78 @@ void Packet_Converter_WS2355(void)
 
    if( bICP_WSR_PacketInputPointer != bICP_WSR_PacketOutputPointer )
    {
-      //----------------------------------------------------------------------------
-      //a fresh packet is ready to check and convert
-      //Serial.print( CHAR_CR, BYTE );
-      //Serial.print( CHAR_LF, BYTE );    
+      // A fresh packet is ready to check and convert
+      #ifdef DEBUG
       if( (ulICP_Timestamp_262_144mS - ulWSR_LastTimestamp_262_144mS) > 8 )
       {
-         //extra CR/LF if there has been more than about 2 seconds since the last packet
-         //Serial.print( CHAR_CR, BYTE );
-         //Serial.print( CHAR_LF, BYTE );    
+         // Blank separator line if there has been more than about 2 seconds since the last
+         // packet to make it easier to see what belongs with what
+         Serial.println();
       }
+      #endif
+
+      #ifdef DEBUG
       //print it in binary text out the serial port
-      /* for( b = WSR_TIMESTAMP_BIT_OFFSET ; b < (WSR_RFPACKETBITSIZE+WSR_TIMESTAMP_BIT_OFFSET) ; b++ )
-      //for( b = 0 ; b < (WSR_RFPACKETBITSIZE+WSR_TIMESTAMP_BIT_OFFSET) ; b++ )
+      Serial.print("BINARY=");
+      for( b = WSR_TIMESTAMP_BIT_OFFSET ; b < (WSR_RFPACKETBITSIZE+WSR_TIMESTAMP_BIT_OFFSET) ; b++ )
       {
          if( (bICP_WSR_PacketData[bICP_WSR_PacketOutputPointer][b >> 3] & (0x80 >> (b&0x07))) != 0 )
          {
             Serial.print( '1', BYTE );
-         }
-         else
-         {
+         } else {
             Serial.print( '0', BYTE );
          }
          if( b == 31 )
             Serial.print( ' ', BYTE );   //timestamp seperator
-      } */
+      }
+      Serial.println();
+      
       //print it in hex text out the serial port
       //Serial.print( ' ', BYTE );
-      /*
+      Serial.print("HEX=");
       for( b = 0 ; b < ((WSR_RFPACKETBITSIZE+WSR_TIMESTAMP_BIT_OFFSET)/4) ; b += 2 )
       {
-         //one nibble at a time
+         // One nibble at a time
          c = bICP_WSR_PacketData[bICP_WSR_PacketOutputPointer][b >> 1];
-         //top nibble
-         Serial.print( (c & 0xF0) >> 4, HEX );     //Serial.print( "0123456789ABCDEF"[(c & 0xF0) >> 4] );
-         //bottom nibble, drop the last one since it's not part of the 52 incoming bits
+         // Top nibble
+         Serial.print( (c & 0xF0) >> 4, HEX );
+         // Bottom nibble, drop the last one since it's not part of the 52 incoming bits
          if( b < (((WSR_RFPACKETBITSIZE+WSR_TIMESTAMP_BIT_OFFSET)/4)-1) )
-         Serial.print( (c & 0x0F), HEX );          //Serial.print( "0123456789ABCDEF"[(c & 0x0F)] );
-         //timestamp seperator
+         Serial.print( (c & 0x0F), HEX );
+         // Timestamp seperator
          if( b == 6 )
             Serial.print( ' ', BYTE );
       }
-      */
+      Serial.println();
+      #endif
+
       //----------------------------------------------------------------------------
       if( PacketAndChecksum_OK_WS2355 )
       {
-         //fish out the station ID
+         // Extract the station ID
          b  = (bICP_WSR_PacketData[bICP_WSR_PacketOutputPointer][5] << 4);
          b += (bICP_WSR_PacketData[bICP_WSR_PacketOutputPointer][6] >> 4);
          bWSR_StationTransmitterID = b;
-         //test print to serial port with decimal place management
-         //Serial.print( " st:" );
-         //Serial.print( bWSR_StationTransmitterID, DEC );            
-
-         //Serial.print( " ok:" );
+         // Print to serial port
+         Serial.print( "STATIONID=" );
+         Serial.println( bWSR_StationTransmitterID, DEC );
          
-         //bits 4 and 5 of this byte are the sensor/packet ID
+         // Bits 4 and 5 of this byte are the sensor/packet ID
          b = bICP_WSR_PacketData[bICP_WSR_PacketOutputPointer][5];
          b = (b >> 4) & 0x03;
          switch( b )
          {
             case 0:
             {
-               //----------------
-               //0: temperature
-               //sensor/packet ID bits are 0x00, temperature is present in this packet
-               //lower nibble of byte 7 is first temperature digit, take care of 3xx offset
+               // 0: temperature
+               // Sensor/packet ID bits are 0x00, temperature is present in this packet
+               // Lower nibble of byte 7 is first temperature digit, take care of 3xx offset
                si  = ((bICP_WSR_PacketData[bICP_WSR_PacketOutputPointer][7] & 0x0F) * 100);
                si += ((bICP_WSR_PacketData[bICP_WSR_PacketOutputPointer][8] >> 4) * 10);
                si +=  (bICP_WSR_PacketData[bICP_WSR_PacketOutputPointer][8] & 0x0F);
                siWSR_CurrentTemperature = (si - 300);
 
-               //test print to serial port with decimal place management
-               /* Serial.print( ' ', BYTE );            
-               Serial.print( (siWSR_CurrentTemperature/10), DEC );
-               Serial.print( '.', BYTE );
-               if( siWSR_CurrentTemperature < 0 )
-                  Serial.print( ((0-siWSR_CurrentTemperature)%10), DEC );
-               else
-                  Serial.print( (siWSR_CurrentTemperature%10), DEC );
-               Serial.print( '?', BYTE ); */
-
+               // Print to serial port with decimal place management
                Serial.print("TEMPERATURE=");            
                Serial.print( (siWSR_CurrentTemperature/10), DEC );
                Serial.print( '.', BYTE );
@@ -263,32 +250,24 @@ void Packet_Converter_WS2355(void)
                } else {
                   Serial.println( (siWSR_CurrentTemperature%10), DEC );
                }
-
                break;
             }
             case 1:
             {
-               //----------------
-               //1: humidity
+               // 1: humidity
                //sensor/packet ID bits are 0x01, humidity is present in this packet
                c  = ((bICP_WSR_PacketData[bICP_WSR_PacketOutputPointer][7] & 0x0F) * 10);
                c +=  (bICP_WSR_PacketData[bICP_WSR_PacketOutputPointer][8] >> 4);
                bWSR_CurrentHumidity = c;
 
-               //test print to serial port with decimal place management
-               /*Serial.print( ' ', BYTE );            
-               Serial.print( bWSR_CurrentHumidity, DEC );
-               Serial.println( "% RH" );   */   
-
-               // Simplified output format
+               // Print to serial port with decimal place management
                Serial.print("HUMIDITY=");
                Serial.println( bWSR_CurrentHumidity, DEC );
                break;
             }
             case 2:
             {
-               //----------------
-               //2: rainfall
+               // 2: rainfall
                si  = (sint)(bICP_WSR_PacketData[bICP_WSR_PacketOutputPointer][7] & 0x0F) << 8;
                si +=        bICP_WSR_PacketData[bICP_WSR_PacketOutputPointer][8];
                uiWSR_RainfallCount = (uint)si;
@@ -296,16 +275,7 @@ void Packet_Converter_WS2355(void)
                //killer (for the Arduino) long multiply here, put in for now to demo real mm of rainfall maths
                ulWSR_Rainfall_mm_x10 = (((unsigned long)uiWSR_RainfallCount * 518) / 100);
 
-               //test print to serial port 
-               /* Serial.print( ' ', BYTE );            
-               Serial.print( uiWSR_RainfallCount, DEC );
-               Serial.print( " rainfall, " );            
-               Serial.print( (ulWSR_Rainfall_mm_x10/10), DEC );
-               Serial.print( '.', BYTE );
-               Serial.print( (ulWSR_Rainfall_mm_x10%10), DEC );
-               Serial.println( " mm" ); */
-
-               // Simplified output format:
+               // Print to serial port 
                Serial.print("RAINFALL=");
                Serial.print( (ulWSR_Rainfall_mm_x10/10), DEC );
                Serial.print( '.', BYTE );
@@ -314,10 +284,9 @@ void Packet_Converter_WS2355(void)
             }
             case 3:
             {
-               //----------------
-               //3: wind direction and speed
-               //sensor/packet ID bits are 0x03, wind data is present in this packet
-               //wind direction
+               // 3: wind direction and speed
+               // Sensor/packet ID bits are 0x03, wind data is present in this packet
+               // Wind direction
                bWSR_CurrentWindDirection = (bICP_WSR_PacketData[bICP_WSR_PacketOutputPointer][8] & 0x0F);
 
                //wind speed, decimal value is metres per second * 10 (1 fixed deciml place)
@@ -326,43 +295,14 @@ void Packet_Converter_WS2355(void)
                si +=       (bICP_WSR_PacketData[bICP_WSR_PacketOutputPointer][8] >> 4);
                uiWSR_CurrentWindSpeed_m_per_sec = (uint)si;
 
-               //test print to serial port with decimal place management
-               /* Serial.print( ' ', BYTE );           
-               Serial.print( strWindDirection[bWSR_CurrentWindDirection] );
-               Serial.print( " (" );           
-               Serial.print( bWSR_CurrentWindDirection, DEC );
-               Serial.print( ") wind, speed" ); */
-
-               // Simplified output format
+               // Print to serial port with decimal place management
                Serial.print("WINDDIRECTION=");
                Serial.println( strWindDirection[bWSR_CurrentWindDirection] );
 
-               /* Serial.print( ' ', BYTE );            
-               Serial.print( (uiWSR_CurrentWindSpeed_m_per_sec/10), DEC );
-               Serial.print( '.', BYTE );
-               Serial.print( (uiWSR_CurrentWindSpeed_m_per_sec%10), DEC );
-               Serial.print( "m/s" );
-               */
                Serial.print("WINDSPEED=");
                Serial.print( (uiWSR_CurrentWindSpeed_m_per_sec/10), DEC );
                Serial.print( '.', BYTE );
                Serial.println( (uiWSR_CurrentWindSpeed_m_per_sec%10), DEC );
-
-               //convert wind speed m/s to kmh and display also   100 raw = 10.0m/s, * 3.6 = km/h
-               //si = uiWSR_CurrentWindSpeed_m_per_sec * 36 / 10;
-               /*Serial.print( ' ', BYTE );            
-               Serial.print( (si/10), DEC );
-               Serial.print( '.', BYTE );
-               Serial.print( (si%10), DEC );
-               Serial.print( "km/h" );
-               Serial.print( ', Raw: ', BYTE ); */
-
-               // Simplified output format
-               /*Serial.print("WINDSPEED=");
-               Serial.print( (si/10), DEC );
-               Serial.print( '.', BYTE );
-               Serial.println( (si%10), DEC ); */
-
                break;
             }
             default:
@@ -370,11 +310,7 @@ void Packet_Converter_WS2355(void)
                break;
             }
          }
-         //----------------
-
-      }
-      else
-      {
+      } else {
          Serial.print( " bad checksum or packet header" );
       }
 
@@ -397,23 +333,23 @@ byte PacketAndChecksum_OK_WS2355(void)
   byte b;
   byte c;
 
-  //first check, last 4 bits of packet are sum of the previous 48 bits (12 nibbles)
-  //don't forget to offset past the timestamp in the first 4 bytes
+  // First check, last 4 bits of packet are sum of the previous 48 bits (12 nibbles)
+  // Don't forget to offset past the timestamp in the first 4 bytes
   c = 0;
   for( b = 4 ; b < 10 ; b++ )
   {
-    //checked a byte at a time, accumulate into c
+    // Checked a byte at a time, accumulate into c
     c += (bICP_WSR_PacketData[bICP_WSR_PacketOutputPointer][b] >> 4);
     c += (bICP_WSR_PacketData[bICP_WSR_PacketOutputPointer][b] & 0x0F);
   }
   c &= 0x0F;
   if( c != (bICP_WSR_PacketData[bICP_WSR_PacketOutputPointer][10] >> 4) )
   {
-    return( false );   //checksum does not match
+    return( false );   // Checksum does not match
   }
 
-  //second check, first byte of packet must be 0x09 ( B00001001 ), appears to be
-  //the main identifier for this station
+  // Second check, first byte of packet must be 0x09 ( B00001001 ), appears to be
+  // the main identifier for this station
   if( bICP_WSR_PacketData[bICP_WSR_PacketOutputPointer][4] != 0x09 )
   {
     return( false );
@@ -442,10 +378,10 @@ void Init_RF_Interpreters(void)
   DDRD  |=  B11000000;      //(1<<PORTD6);   //DDRD  |=  (1<<PORTD7); (example of B prefix)
   GREEN_TESTLED_OFF();      //GREEN test led off
   RED_TESTLED_ON();         //RED test led on
-  //PORTD |=  _BV(PORTD6);    //GREEN led off  (example of _BV macro)
-  //PORTD &= ~_BV(PORTD7);    //RED led on     (example of _BV macro)
-  //PORTD |=  (1<<PORTD6);    //GREEN led off  (example of AVR studio style)
-  //PORTD &= ~(1<<PORTD7);    //RED led on     (example of AVR studio style)
+  //PORTD |=  _BV(PORTD6);    //GREEN test led off  (example of _BV macro)
+  //PORTD &= ~_BV(PORTD7);    //RED test led on     (example of _BV macro)
+  //PORTD |=  (1<<PORTD6);    //GREEN test led off  (example of AVR studio style)
+  //PORTD &= ~(1<<PORTD7);    //RED test led on     (example of AVR studio style)
 
   //---------------------------------------------------------------------------------------------
   //ICNC1: Input Capture Noise Canceler         On, 4 successive equal ICP1 samples required for trigger (4*4uS = 16uS delayed)
@@ -480,10 +416,11 @@ ISR( TIMER1_OVF_vect )
 --------------------------------------------------------------------------------------*/
 ISR( TIMER1_CAPT_vect ) 
 {  
-   //immediately grab the current capture time in case it triggers again and overwrites ICR1 with an unexpected new value
+   // Immediately grab the current capture time in case it triggers again and
+   // overwrites ICR1 with an unexpected new value
    uiICP_CapturedTime = ICR1;
    
-//GREEN test led on (flicker for debug)
+// GREEN test led on (flicker for debug)
 GREEN_TESTLED_ON();      
 
    //----------------------------------------------------------------------------
@@ -493,9 +430,7 @@ GREEN_TESTLED_ON();
    {
       SET_INPUT_CAPTURE_FALLING_EDGE();      //previous period was low and just transitioned high
       bICP_CapturedPeriodWasHigh = false;    //uiICP_CapturedPeriod about to be stored will be a low period      
-   }
-   else
-   {
+   } else {
       SET_INPUT_CAPTURE_RISING_EDGE();       //previous period was high and transitioned low
       bICP_CapturedPeriodWasHigh = true;     //uiICP_CapturedPeriod about to be stored will be a high period      
    }
@@ -556,14 +491,10 @@ void RF_Interpreter_WS2355( /*uiICP_CapturedPeriod, bICP_CapturedPeriodWasHigh*/
          {
             //short high, valid one bit
             bValidBit = WSR_BIT_ONE;
-         }
-         else if( (uiICP_CapturedPeriod >= WSR_LONG_PERIOD_MIN) && (uiICP_CapturedPeriod <= WSR_LONG_PERIOD_MAX) ) 
-         {
+         } else if( (uiICP_CapturedPeriod >= WSR_LONG_PERIOD_MIN) && (uiICP_CapturedPeriod <= WSR_LONG_PERIOD_MAX) ) {
             //long high, valid zero bit
             bValidBit = WSR_BIT_ZERO;
-         }
-         else
-         {
+         } else {
             //invalid high period, in the dead zone between short and long bit period lengths
             WSR_RESET();
          }
@@ -588,33 +519,29 @@ void RF_Interpreter_WS2355( /*uiICP_CapturedPeriod, bICP_CapturedPeriodWasHigh*/
                      &= ~(0x01 << (bICP_WSR_PacketInputBitPointer&0x07));
                   bICP_WSR_PacketInputBitPointer++;
                   bICP_WSR_State = WSR_STATE_LOADING_BITSTREAM;
-               }
-               else
-               {
+               } else {
                   WSR_RESET();
                }
                break;
             }
             case WSR_STATE_LOADING_BITSTREAM:
             {
-               //----------
-               //potentially valid packet bitstream is on its way in, keep loading it up
+               // Potentially valid packet bitstream is on its way in, keep loading it up
                if( bValidBit == WSR_BIT_ZERO )
                {
                   bICP_WSR_PacketData[bICP_WSR_PacketInputPointer][bICP_WSR_PacketInputBitPointer >> 3]
                      &= ~(0x80 >> (bICP_WSR_PacketInputBitPointer&0x07));
-               }
-               else
-               {
+               } else {
                   bICP_WSR_PacketData[bICP_WSR_PacketInputPointer][bICP_WSR_PacketInputBitPointer >> 3]
                      |=  (0x80 >> (bICP_WSR_PacketInputBitPointer&0x07));
                }
-               //----------
-               //check at appropriate location of the incoming bitstream, if it is valid and throw away if not
+
+               // Check at appropriate location of the incoming bitstream, if it is valid and throw away if not
                if( bICP_WSR_PacketInputBitPointer == (WSR_TIMESTAMP_BIT_OFFSET + 4) )
                {
-                  //                              01234    01234
-                  //acceptable start to packet is 00001 or 00010 (lost the first 0), could optimise this but will leave with b for now for stability and debugging
+                  //                               01234    01234
+                  // Acceptable start to packet is 00001 or 00010 (lost the first 0), could optimise
+                  // this but will leave with b for now for stability and debugging
                   b = bICP_WSR_PacketData[bICP_WSR_PacketInputPointer][4/*bICP_WSR_PacketInputBitPointer >> 3*/];
                   b &= B11111000;
                   if( b == B00010000 )
@@ -622,43 +549,39 @@ void RF_Interpreter_WS2355( /*uiICP_CapturedPeriod, bICP_CapturedPeriodWasHigh*/
                      //valid packet 00010 start (with lost first zero), realign and continue
                      bICP_WSR_PacketData[bICP_WSR_PacketInputPointer][4/*bICP_WSR_PacketInputBitPointer >> 3*/] = B00001000;
                      bICP_WSR_PacketInputBitPointer++;      //move up one past the inserted missing bit
-                  }
-                  else if( b != B00001000 )
-                  {
+                  } else if( b != B00001000 ) {
                      //invalid packet start, not 00001, reset
                      WSR_RESET();
                   }
                }
-               //----------
-               //final check, has the last packet bit (52 bits total) come in, if so, mark this packet as done and move the major packet input pointer along
+
+               // Final check, has the last packet bit (52 bits total) come in? If so, mark this packet
+               // as done and move the major packet input pointer along
                if( bICP_WSR_PacketInputBitPointer == (WSR_TIMESTAMP_BIT_OFFSET + (WSR_RFPACKETBITSIZE-1)) )
                {
-                  //got full packet, timestamp it for the main loop
+                  // Got full packet, timestamp it for the main loop
                   bICP_WSR_PacketData[bICP_WSR_PacketInputPointer][0] = byte(ulICP_Timestamp_262_144mS >> 24);
                   bICP_WSR_PacketData[bICP_WSR_PacketInputPointer][1] = byte(ulICP_Timestamp_262_144mS >> 16);
                   bICP_WSR_PacketData[bICP_WSR_PacketInputPointer][2] = byte(ulICP_Timestamp_262_144mS >>  8);
                   bICP_WSR_PacketData[bICP_WSR_PacketInputPointer][3] = byte(ulICP_Timestamp_262_144mS);
-                  //pointer and packet count
+                  // Pointer and packet count
                   bICP_WSR_PacketInputPointer = ((bICP_WSR_PacketInputPointer+1)&(WSR_PACKETARRAYSIZE-1));//only the lower three bits are used for the 8 entry array
                   uiICP_WSR_ReceivedPacketCount++;                                                        //note will overflow and wrap, used for display of progress only
                   WSR_RESET();
                }
-               //----------
-               //increment pointer to next new bit location
+
+               // Increment pointer to next new bit location
                bICP_WSR_PacketInputBitPointer++;               
                break;
             }
          }
       }
       //----------------------------------------------------------------------------
-   }
-   else
-   {
+   } else {
       //----------------------------------------------------------------------------
-      //PERIOD OUT OF BOUNDS, DISCARD
-      //This will throw away any out of range periods and reset the state machine, high or low.
+      // PERIOD OUT OF BOUNDS, DISCARD
+      // This will throw away any out of range periods and reset the state machine, high or low.
       //----------------------------------------------------------------------------
       WSR_RESET();
    }
-
 }
