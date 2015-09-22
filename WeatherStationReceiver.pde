@@ -215,7 +215,7 @@ void Packet_Converter_WS2355(void)
     #endif
 
     //----------------------------------------------------------------------------
-    if( PacketAndChecksum_OK_WS2355 )
+    if( PacketAndChecksum_OK_WS2355() )
     {
       // Extract the station ID
       b  = (bICP_WSR_PacketData[bICP_WSR_PacketOutputPointer][5] << 4);
