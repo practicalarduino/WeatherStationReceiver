@@ -2,8 +2,10 @@
 
 ###### Copyright 2009 Marc Alexander <marc.alexander@gmail.com>
 ###### Copyright 2009 Jonathan Oxer <jon@oxer.com.au> 
-<<<<<<< HEAD:README
 
+___
+#### *Read this in other languages.*
+[🇪🇸](translations/README.es.md)
 
  This project is featured in the book "Practical Arduino" by       
  Jonathan Oxer and Hugh Blemings (Apress, 2009). More information    
@@ -11,8 +13,6 @@
                                                                      
  www.practicalarduino.com/projects/medium/weather-station-receiver 
  
-
-=======
 ___
 
  This project is featured in the book "Practical Arduino" by       
@@ -24,7 +24,7 @@ ___
  ____
  
  <div class=text-justify>
->>>>>>> fermanlive:README.md
+
 
 The incredible popularity of home weather stations shows that it's not
 just farmers who are interested in the weather. Many people want to be
