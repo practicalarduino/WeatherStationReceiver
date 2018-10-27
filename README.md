@@ -3,19 +3,19 @@
 ###### Copyright 2009 Marc Alexander <marc.alexander@gmail.com>
 ###### Copyright 2009 Jonathan Oxer <jon@oxer.com.au> 
 
-<<<<<<< HEAD
 ___
 #### *Read this in other languages.*
-[🇪🇸](translations/README.es.md)
+[Español](translate/README.es.md)
+
+___
+
 
  This project is featured in the book "Practical Arduino" by       
  Jonathan Oxer and Hugh Blemings (Apress, 2009). More information    
  about the book and this project is available at:                   
                                                                      
  www.practicalarduino.com/projects/medium/weather-station-receiver 
- 
-=======
->>>>>>> fa9b35c2b7816cbf5f79a284d5b514ee73962e35
+
 ___
 
  This project is featured in the book "Practical Arduino" by       
