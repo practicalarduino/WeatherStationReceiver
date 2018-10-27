@@ -4,7 +4,6 @@
 ###### Copyright 2009 Jonathan Oxer <jon@oxer.com.au> 
 
 ___
-Este proyecto es
 
 Este proyecto aparece en el libro "Practical Arduino" por
 Jonathan Oxer y Hugh Blemings (Apress, 2009). Más información
