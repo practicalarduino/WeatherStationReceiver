@@ -12,7 +12,6 @@
  www.practicalarduino.com/projects/medium/weather-station-receiver 
  
 
-=======
 ___
 
  This project is featured in the book "Practical Arduino" by       
@@ -24,7 +23,7 @@ ___
  ____
  
  <div class=text-justify>
->>>>>>> fermanlive:README.md
+
 
 The incredible popularity of home weather stations shows that it's not
 just farmers who are interested in the weather. Many people want to be
