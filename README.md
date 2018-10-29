@@ -1,16 +1,33 @@
-Weather Station Receiver
-========================
+# Weather Station Receiver
 
-Copyright 2009 Marc Alexander <marc.alexander@gmail.com>
-Copyright 2009 Jonathan Oxer <jon@oxer.com.au>
+###### Copyright 2009 Marc Alexander <marc.alexander@gmail.com>
+###### Copyright 2009 Jonathan Oxer <jon@oxer.com.au> 
 
-+---------------------------------------------------------------------+
-| This project is featured in the book "Practical Arduino" by         |
-| Jonathan Oxer and Hugh Blemings (Apress, 2009). More information    |
-| about the book and this project is available at:                    |
-|                                                                     |
-| www.practicalarduino.com/projects/medium/weather-station-receiver   |
-+---------------------------------------------------------------------+
+___
+#### *Read this in other languages.*
+[Español](translate/README.es.md)
+
+___
+
+
+ This project is featured in the book "Practical Arduino" by       
+ Jonathan Oxer and Hugh Blemings (Apress, 2009). More information    
+ about the book and this project is available at:                   
+                                                                     
+ www.practicalarduino.com/projects/medium/weather-station-receiver 
+
+___
+
+ This project is featured in the book "Practical Arduino" by       
+ Jonathan Oxer and Hugh Blemings (Apress, 2009). More information    
+ about the book and this project is available at:                   
+                                                                     
+ www.practicalarduino.com/projects/medium/weather-station-receiver 
+ 
+ ____
+ 
+ <div class=text-justify>
+
 
 The incredible popularity of home weather stations shows that it's not
 just farmers who are interested in the weather. Many people want to be
@@ -60,6 +77,8 @@ many weather station sensors are available individually you may find you
 can buy just the sensors you want and save some money compared to buying
 a complete system, while also gaining the flexibility of managing the
 data through an Arduino.
+
+</div>
 
 NOTE: This code is still very preliminary and full of debug information
 used while interpreting the comms protocol. Please don't judge it by
